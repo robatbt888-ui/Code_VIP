@@ -83,8 +83,9 @@ export default function HomeScreen() {
             <IconSymbol name="plus" size={22} color={colors.foreground} />
           </Pressable>
         </View>
+        <View style={styles.spectrumBar}><View style={[styles.spectrumSegment, { backgroundColor: colors.primary }]} /><View style={[styles.spectrumSegment, { backgroundColor: colors.success }]} /><View style={[styles.spectrumSegment, { backgroundColor: colors.error }]} /></View>
 
-        <View style={[styles.modelPicker, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+        <View style={[styles.modelPicker, { borderColor: colors.border, backgroundColor: colors.surface }]}> 
           <Pressable onPress={() => setShowModels((value) => !value)} style={styles.modelPickerButton}>
             <View style={[styles.modelDot, { backgroundColor: selectedModel.accent }]} />
             <View style={styles.modelPickerText}>
@@ -148,6 +149,8 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 18, paddingTop: 10, paddingBottom: 14 },
+  spectrumBar: { flexDirection: "row-reverse", height: 4, marginHorizontal: 18, marginBottom: 12, borderRadius: 2, overflow: "hidden", gap: 2 },
+  spectrumSegment: { flex: 1, borderRadius: 2 },
   headerTitle: { flexDirection: "row-reverse", alignItems: "center", gap: 10 },
   brandMark: { width: 38, height: 38, borderRadius: 13, alignItems: "center", justifyContent: "center" },
   eyebrow: { fontSize: 11, fontWeight: "600", marginBottom: 1 },
