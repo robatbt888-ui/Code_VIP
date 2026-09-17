@@ -36,36 +36,56 @@ export type ProviderSettings = {
   apiKeyConfigured: boolean;
 };
 
+export type CliSupport = "termux" | "api" | "cloud" | "experimental";
+
+export type CliTool = {
+  id: string;
+  name: string;
+  vendor: string;
+  description: string;
+  installCommand: string;
+  launchCommand: string;
+  authCommand: string;
+  support: CliSupport;
+  accent: string;
+  website: string;
+};
+
+export type TerminalLine = {
+  id: string;
+  kind: "input" | "output" | "system" | "error";
+  text: string;
+  createdAt: string;
+};
+
+export type TerminalSession = {
+  id: string;
+  toolId: string;
+  title: string;
+  cwd: string;
+  lines: TerminalLine[];
+  updatedAt: string;
+};
+
 export type StoredAppState = {
   conversations: Conversation[];
   selectedConversationId: string | null;
   selectedModelId: string;
   providerSettings: Record<ProviderKind, ProviderSettings>;
+  terminalSessions: TerminalSession[];
+  selectedToolId: string;
 };
 
 export const DEFAULT_STATE: StoredAppState = {
   conversations: [],
   selectedConversationId: null,
   selectedModelId: "code-vip-demo",
+  terminalSessions: [],
+  selectedToolId: "opencode",
   providerSettings: {
-    demo: {
-      provider: "demo",
-      baseUrl: "",
-      model: "code-vip-demo",
-      apiKeyConfigured: false,
-    },
-    openai: {
-      provider: "openai",
-      baseUrl: "https://api.openai.com/v1",
-      model: "gpt-5-codex",
-      apiKeyConfigured: false,
-    },
-    anthropic: {
-      provider: "anthropic",
-      baseUrl: "https://api.anthropic.com/v1",
-      model: "claude-sonnet-4-5",
-      apiKeyConfigured: false,
-    },
+    demo: { provider: "demo", baseUrl: "", model: "code-vip-demo", apiKeyConfigured: false },
+    openai: { provider: "openai", baseUrl: "https://api.openai.com/v1", model: "gpt-5-codex", apiKeyConfigured: false },
+    anthropic: { provider: "anthropic", baseUrl: "https://api.anthropic.com/v1", model: "claude-sonnet-4-5", apiKeyConfigured: false },
   },
 };
 

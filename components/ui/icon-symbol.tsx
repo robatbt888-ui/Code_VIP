@@ -23,6 +23,9 @@ const MAPPING: Record<string, IconName> = {
   "check": "check",
   "info": "info-outline",
   "attach": "attach-file",
+  "terminal": "terminal",
+  "open": "open-in-new",
+  "play": "play-arrow",
 };
 
 export function IconSymbol({ name, size = 24, color, style, weight }: { name: keyof typeof MAPPING | string; size?: number; color: string | OpaqueColorValue; style?: StyleProp<TextStyle>; weight?: string }) {

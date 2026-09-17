@@ -21,6 +21,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: "چت", tabBarIcon: ({ color }) => <IconSymbol name="message.fill" size={24} color={color} /> }} />
+      <Tabs.Screen name="terminal" options={{ title: "ترمینال", tabBarIcon: ({ color }) => <IconSymbol name="terminal" size={24} color={color} /> }} />
       <Tabs.Screen name="library" options={{ title: "گفتگوها", tabBarIcon: ({ color }) => <IconSymbol name="folder.fill" size={24} color={color} /> }} />
       <Tabs.Screen name="settings" options={{ title: "تنظیمات", tabBarIcon: ({ color }) => <IconSymbol name="gearshape.fill" size={24} color={color} /> }} />
     </Tabs>
