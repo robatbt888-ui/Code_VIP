@@ -41,17 +41,17 @@ jobs:
       - name: Generate native Android project
         run: npx expo prebuild --platform android --no-install --non-interactive
 
-      - name: Build debug APK
+      - name: Build standalone release APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Rename APK
-        run: cp android/app/build/outputs/apk/debug/app-debug.apk Code-VIP-debug.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk Code-VIP-release.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: code-vip-apk
-          path: Code-VIP-debug.apk
+          path: Code-VIP-release.apk
           if-no-files-found: error
           retention-days: 30
