@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { getModel } from "@/lib/model-catalog";
 import { getProviderApiKey, loadAppState, saveAppState, setProviderApiKey } from "@/lib/local-storage";
 import { requestAssistantReply } from "@/lib/provider-client";
-import { createId, DEFAULT_STATE, type ChatMessage, type Conversation, type ProviderKind, type ProviderSettings, type StoredAppState } from "@/shared/models";
+import { createId, DEFAULT_STATE, type ChatAttachment, type ChatMessage, type Conversation, type ProviderKind, type ProviderSettings, type StoredAppState } from "@/shared/models";
 
 const AppStateContext = createContext<{
   state: StoredAppState;
@@ -13,7 +13,7 @@ const AppStateContext = createContext<{
   createConversation: (modelId?: string) => string;
   selectConversation: (conversationId: string) => void;
   deleteConversation: (conversationId: string) => void;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, attachments?: ChatAttachment[]) => Promise<void>;
   updateProviderSettings: (provider: ProviderKind, patch: Partial<ProviderSettings>, apiKey?: string) => Promise<void>;
 } | null>(null);
 
@@ -71,24 +71,28 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, attachments: ChatAttachment[] = []) => {
     const text = content.trim();
-    if (!text) return;
+    if (!text && attachments.length === 0) return;
     const selectedModel = getModel(state.selectedModelId);
     const current = state.conversations.find((item) => item.id === state.selectedConversationId);
     const conversationId = current?.id ?? createId("conversation");
     const now = new Date().toISOString();
-    const userMessage: ChatMessage = { id: createId("message"), role: "user", content: text, createdAt: now, modelId: selectedModel.id };
+    const attachmentContext = attachments
+      .filter((attachment) => attachment.textContent)
+      .map((attachment) => `\n\n--- ${attachment.name} ---\n${attachment.textContent}`)
+      .join("");
+    const userMessage: ChatMessage = { id: createId("message"), role: "user", content: `${text}${attachmentContext}`.trim(), createdAt: now, modelId: selectedModel.id, attachments };
     const conversation: Conversation = current ?? {
       id: conversationId,
-      title: text.slice(0, 32),
+      title: (text || attachments[0]?.name || "فایل پیوست").slice(0, 32),
       modelId: selectedModel.id,
       createdAt: now,
       updatedAt: now,
       messages: [],
     };
     const nextMessages = [...conversation.messages, userMessage];
-    const nextConversation = { ...conversation, title: conversation.messages.length ? conversation.title : text.slice(0, 32), modelId: selectedModel.id, updatedAt: now, messages: nextMessages };
+    const nextConversation = { ...conversation, title: conversation.messages.length ? conversation.title : (text || attachments[0]?.name || "فایل پیوست").slice(0, 32), modelId: selectedModel.id, updatedAt: now, messages: nextMessages };
     const providerSettings = state.providerSettings[selectedModel.provider];
 
     setState((previous) => ({

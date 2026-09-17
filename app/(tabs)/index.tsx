@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system/legacy";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { MODEL_CATALOG } from "@/lib/model-catalog";
 import { useAppState } from "@/lib/app-state";
 import { useColors } from "@/hooks/use-colors";
-import type { ChatMessage } from "@/shared/models";
+import { createId, type ChatAttachment, type ChatMessage } from "@/shared/models";
 
 const rtl = { writingDirection: "rtl" as const, textAlign: "right" as const };
 
@@ -17,6 +19,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       {!isUser && <View style={[styles.avatar, { backgroundColor: colors.primary }]}><IconSymbol name="sparkles" size={14} color="#fff" /></View>}
       <View style={[styles.bubble, { backgroundColor: isUser ? colors.primary : colors.surface, borderColor: isUser ? colors.primary : colors.border }]}>
         <Text style={[styles.messageText, rtl, { color: isUser ? "#fff" : colors.foreground }]}>{message.content}</Text>
+        {message.attachments?.map((attachment) => <View key={attachment.id} style={[styles.messageAttachment, { backgroundColor: isUser ? "rgba(255,255,255,.14)" : colors.background }]}><IconSymbol name="attach" size={13} color={isUser ? "#fff" : colors.primary} /><Text style={[styles.messageAttachmentText, { color: isUser ? "#fff" : colors.foreground }]} numberOfLines={1}>{attachment.name}</Text></View>)}
         <Text style={[styles.messageTime, { color: isUser ? "rgba(255,255,255,.7)" : colors.muted }]}>{new Date(message.createdAt).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" })}</Text>
       </View>
     </View>
@@ -27,6 +30,7 @@ export default function HomeScreen() {
   const colors = useColors();
   const { activeConversation, selectedModel, setSelectedModel, createConversation, sendMessage } = useAppState();
   const [draft, setDraft] = useState("");
+  const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const [sending, setSending] = useState(false);
   const [showModels, setShowModels] = useState(false);
 
@@ -37,12 +41,30 @@ export default function HomeScreen() {
     setShowModels(false);
   };
 
+  const pickFiles = async () => {
+    const result = await DocumentPicker.getDocumentAsync({ type: "*/*", multiple: true, copyToCacheDirectory: true });
+    if (result.canceled) return;
+    const picked: ChatAttachment[] = [];
+    for (const asset of result.assets) {
+      const extension = asset.name.split(".").pop()?.toLowerCase() ?? "";
+      const isText = Boolean(asset.mimeType?.startsWith("text/")) || ["js", "jsx", "ts", "tsx", "py", "java", "kt", "swift", "json", "xml", "html", "css", "md", "sql", "yml", "yaml", "env", "sh", "txt", "csv"].includes(extension);
+      let textContent: string | undefined;
+      if (isText && (asset.size ?? 0) <= 512_000) {
+        try { textContent = await FileSystem.readAsStringAsync(asset.uri); } catch { textContent = undefined; }
+      }
+      picked.push({ id: createId("attachment"), name: asset.name, uri: asset.uri, mimeType: asset.mimeType, size: asset.size, textContent });
+    }
+    setAttachments((previous) => [...previous, ...picked].slice(0, 5));
+  };
+
   const submit = async () => {
-    if (!draft.trim() || sending) return;
+    if ((!draft.trim() && attachments.length === 0) || sending) return;
     const message = draft;
+    const selectedAttachments = attachments;
     setDraft("");
+    setAttachments([]);
     setSending(true);
-    await sendMessage(message);
+    await sendMessage(message, selectedAttachments);
     setSending(false);
   };
 
@@ -109,9 +131,11 @@ export default function HomeScreen() {
           <FlatList data={messages} keyExtractor={(item) => item.id} renderItem={({ item }) => <MessageBubble message={item} />} contentContainerStyle={styles.messageList} showsVerticalScrollIndicator={false} />
         )}
 
+        {attachments.length > 0 && <View style={styles.attachmentTray}>{attachments.map((attachment) => <View key={attachment.id} style={[styles.attachmentChip, { borderColor: colors.border, backgroundColor: colors.surface }]}><IconSymbol name="attach" size={13} color={colors.primary} /><Text style={[styles.attachmentChipText, { color: colors.foreground }]} numberOfLines={1}>{attachment.name}</Text><Pressable onPress={() => setAttachments((previous) => previous.filter((item) => item.id !== attachment.id))}><IconSymbol name="close" size={14} color={colors.muted} /></Pressable></View>)}</View>}
         <View style={[styles.composer, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+          <Pressable onPress={pickFiles} style={({ pressed }) => [styles.attachButton, pressed && styles.pressed]}><IconSymbol name="attach" size={20} color={colors.primary} /></Pressable>
           <TextInput value={draft} onChangeText={setDraft} onSubmitEditing={submit} placeholder="پیام یا کد خود را بنویسید..." placeholderTextColor={colors.muted} multiline maxLength={8000} style={[styles.input, { color: colors.foreground }, rtl]} textAlignVertical="top" />
-          <Pressable onPress={submit} disabled={!draft.trim() || sending} style={({ pressed }) => [styles.sendButton, { backgroundColor: draft.trim() && !sending ? colors.primary : colors.border }, pressed && styles.pressed]}>
+          <Pressable onPress={submit} disabled={(!draft.trim() && attachments.length === 0) || sending} style={({ pressed }) => [styles.sendButton, { backgroundColor: (draft.trim() || attachments.length > 0) && !sending ? colors.primary : colors.border }, pressed && styles.pressed]}>
             {sending ? <ActivityIndicator size="small" color="#fff" /> : <IconSymbol name="arrow.up" size={21} color="#fff" />}
           </Pressable>
         </View>
@@ -155,8 +179,14 @@ const styles = StyleSheet.create({
   avatar: { width: 26, height: 26, borderRadius: 9, alignItems: "center", justifyContent: "center" },
   bubble: { maxWidth: "86%", borderRadius: 17, paddingHorizontal: 14, paddingVertical: 11, borderWidth: 1 },
   messageText: { fontSize: 14, lineHeight: 22 },
+  messageAttachment: { flexDirection: "row-reverse", alignItems: "center", gap: 5, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 5, marginTop: 7, maxWidth: 220 },
+  messageAttachmentText: { fontSize: 10, flexShrink: 1 },
   messageTime: { fontSize: 9, marginTop: 6, textAlign: "left" },
-  composer: { marginHorizontal: 14, borderRadius: 18, borderWidth: 1, minHeight: 58, maxHeight: 140, flexDirection: "row-reverse", alignItems: "flex-end", padding: 8, gap: 8 },
+  attachmentTray: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 6, marginHorizontal: 14, marginBottom: 6 },
+  attachmentChip: { flexDirection: "row-reverse", alignItems: "center", gap: 5, borderWidth: 1, borderRadius: 9, paddingHorizontal: 7, paddingVertical: 5, maxWidth: 180 },
+  attachmentChipText: { fontSize: 10, flexShrink: 1 },
+  composer: { marginHorizontal: 14, borderRadius: 18, borderWidth: 1, minHeight: 58, maxHeight: 140, flexDirection: "row-reverse", alignItems: "flex-end", padding: 8, gap: 5 },
+  attachButton: { width: 38, height: 42, alignItems: "center", justifyContent: "center" },
   input: { flex: 1, minHeight: 40, maxHeight: 112, fontSize: 14, lineHeight: 21, paddingHorizontal: 9, paddingTop: 8, paddingBottom: 7 },
   sendButton: { width: 42, height: 42, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   disclaimer: { fontSize: 10, textAlign: "center", paddingHorizontal: 12, paddingTop: 7, paddingBottom: 5 },

@@ -2,12 +2,22 @@ export type ProviderKind = "demo" | "openai" | "anthropic";
 
 export type ChatRole = "user" | "assistant" | "system";
 
+export type ChatAttachment = {
+  id: string;
+  name: string;
+  uri: string;
+  mimeType?: string;
+  size?: number;
+  textContent?: string;
+};
+
 export type ChatMessage = {
   id: string;
   role: ChatRole;
   content: string;
   createdAt: string;
   modelId?: string;
+  attachments?: ChatAttachment[];
 };
 
 export type Conversation = {
