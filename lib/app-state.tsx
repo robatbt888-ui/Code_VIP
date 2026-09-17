@@ -24,6 +24,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     loadAppState()
       .then((saved) => saved && setState({ ...DEFAULT_STATE, ...saved }))
+      .catch(() => undefined)
       .finally(() => setHydrated(true));
   }, []);
 
