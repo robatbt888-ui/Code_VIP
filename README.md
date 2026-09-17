@@ -1,0 +1,47 @@
+# Code VIP
+
+Code VIP یک اپ فارسی‌اول برای چت با مدل‌های کدنویسی است. گفتگوها به‌صورت محلی روی دستگاه ذخیره می‌شوند، مدل از داخل کاتالوگ انتخاب می‌شود و کاربر می‌تواند به ارائه‌دهنده‌های واقعی از طریق API متصل شود.
+
+## قابلیت‌های نسخه فعلی
+
+- رابط فارسی و راست‌به‌چپ برای چت کدنویسی
+- کاتالوگ مدل‌ها شامل Codex/GPT Coding، Claude Sonnet، Claude Opus، Gemini، DeepSeek و Qwen
+- حالت Demo آفلاین برای آزمایش بدون کلید API
+- ذخیره و ادامه گفتگوها با `AsyncStorage`
+- جست‌وجو، حذف و مدیریت گفتگوها
+- ذخیره کلید API در Android Keystore / iOS Keychain
+- پشتیبانی از APIهای OpenAI-compatible و Anthropic Messages API
+- ورود اختیاری Code VIP برای مسیر همگام‌سازی ابری؛ حالت محلی بدون ورود هم کار می‌کند
+- تنظیمات build برای خروجی APK اندروید
+
+## نکته مهم درباره «دانلود همه مدل‌ها»
+
+مدل‌هایی مانند Claude Code، Codex و مدل‌های تجاری مشابه، فایل قابل‌دانلود برای قرار دادن داخل APK نیستند و مجوز/هزینه/API مستقل دارند. این اپ کاتالوگ و اتصال آن‌ها را در یکجا ارائه می‌کند؛ برای پاسخ واقعی باید کلید یا gateway مجاز همان سرویس در تنظیمات وارد شود. هیچ کلید خصوصی در کد یا APK قرار داده نشده است.
+
+## اجرای توسعه‌ای
+
+```bash
+pnpm install
+pnpm dev
+```
+
+## بررسی کیفیت
+
+```bash
+pnpm check
+pnpm lint
+pnpm test
+npx expo export --platform web --output-dir /tmp/code-vip-export
+```
+
+## ساخت APK
+
+این پروژه برای EAS آماده شده است. پس از نصب/ورود به EAS:
+
+```bash
+npx eas login
+npx eas build:configure
+npx eas build --platform android --profile preview
+```
+
+پروفایل `preview` خروجی قابل نصب APK می‌سازد. برای انتشار فروشگاهی از پروفایل `production` استفاده کنید که خروجی پیش‌فرض آن AAB است.
